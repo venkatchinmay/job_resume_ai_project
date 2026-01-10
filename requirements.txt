@@ -1,14 +1,57 @@
-pypdf
+# ========================================
+# MINIMAL PRODUCTION DEPENDENCIES
+# Only packages directly imported by code
+# ========================================
+
+# Core Dependencies
+pypdf==6.5.0
 python-dotenv==1.0.0
 requests==2.31.0
-langchain
-langchain-openai
-jinja2
-python-jobspy
-trafilatura
-firecrawl-py
+jinja2==3.1.6
+
+# Flask Web Framework
 flask==3.0.0
 flask-cors==4.0.0
-pandas
-groq
-langchain-groq
+werkzeug==3.1.5
+
+# LangChain Ecosystem (only what's actually imported)
+langchain==1.2.0
+langchain-core==1.2.5
+langchain-openai==1.1.6
+langchain-groq==1.1.1
+
+# AI/ML Models
+groq==0.37.1
+openai==2.14.0
+
+# PyTorch and Transformers (for local models in transformer_models.py)
+torch==2.9.1
+transformers>=5.0.0
+accelerate==1.12.0
+
+# Job Scraping
+python-jobspy==1.1.82
+firecrawl-py==4.12.0
+
+# Data Processing
+pandas==2.3.3
+
+# ========================================
+# OPTIONAL DEPENDENCIES
+# Uncomment if needed
+# ========================================
+
+# Development/Notebook Support (only if using resume_test.ipynb)
+# ipykernel==7.1.0
+# ipython==9.8.0
+# jupyter_client==8.7.0
+# jupyter_core==5.9.1
+
+# Additional web scraping (if you use trafilatura separately)
+# trafilatura==2.0.0
+# beautifulsoup4==4.14.3
+
+# Scientific computing (not directly imported in production code)
+# scikit-learn==1.8.0
+# scipy==1.16.3
+# sentence-transformers==5.2.0
