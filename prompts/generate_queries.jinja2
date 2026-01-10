@@ -1,0 +1,208 @@
+You are a job search expert AI with deep understanding of job markets and skill prioritization. Generate {{ MAX_SEARCH_QUERIES }} highly effective search queries for job platforms using the JobSpy library (LinkedIn, Indeed, Naukri, Glassdoor, ZipRecruiter, Google Jobs).
+
+## RESUME ANALYSIS
+{%- set all_skills = resume_data.get('skills', []) %}
+{%- set experience = resume_data.get('experience_years', 0) %}
+{%- set job_titles = resume_data.get('worked_job_titles', []) %}
+{%- set companies = resume_data.get('companies', []) %}
+{%- set industries = resume_data.get('industry', []) %}
+{%- set work_exp = resume_data.get('work_experience', []) %}
+{%- set projects = resume_data.get('projects', []) %}
+{%- set preferred_location = resume_data.get('location', resume_data.get('preferred_location', '')) %}
+{%- set job_type = resume_data.get('job_type', resume_data.get('JobType', 'fulltime')) | lower %}
+{%- set country = resume_data.get('country', resume_data.get('Country', 'India')) %}
+
+## CANDIDATE PROFILE
+**Experience Level:** {{ experience }} years
+**Previous Job Titles:** {{ job_titles | join(', ') if job_titles else 'N/A' }}
+**Companies:** {{ companies | join(', ') if companies else 'N/A' }}
+**Industries:** {{ industries | join(', ') if industries else 'N/A' }}
+**Preferred Location:** {{ preferred_location if preferred_location else 'Anywhere in ' + country }}
+**Job Type:** {{ job_type if job_type else 'fulltime' }}
+**Country:** {{ country }}
+
+**All Skills:**
+{{ all_skills | join(', ') if all_skills else 'N/A' }}
+
+**Key Technologies from Experience:**
+{%- set tech_set = [] %}
+{%- for exp in work_exp %}
+  {%- for tech in exp.get('technologies', []) %}
+    {%- if tech not in tech_set %}{{ tech_set.append(tech) or '' }}{%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{%- for proj in projects %}
+  {%- for tech in proj.get('technologies', []) %}
+    {%- if tech not in tech_set %}{{ tech_set.append(tech) or '' }}{%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{{ tech_set | join(', ') if tech_set else 'N/A' }}
+
+**Recent Work Summary:**
+{%- if work_exp %}
+{{ work_exp[0].get('summary', 'N/A') }}
+{%- endif %}
+
+**Projects Summary:**
+{%- for proj in projects %}
+- {{ proj.get('project_name', 'N/A') }}: {{ proj.get('description', 'N/A') }}
+{%- endfor %}
+
+## PRIMARY SKILL IDENTIFICATION TASK
+**CRITICAL INSTRUCTION:** Analyze the ENTIRE resume data above to identify the PRIMARY/DOMINANT skill or technology that defines this candidate's expertise. 
+
+**Analysis Guidelines:**
+1. Look at frequency across skills, work_experience technologies, and project technologies
+2. Consider the most recent work_experience (most important)
+3. Identify the core platform/technology that appears most often
+4. Consider industry-standard naming (e.g., "Dell Boomi" or "Boomi Integration" is the primary platform for integration work)
+
+**Identified Primary Skills (You MUST determine these):**
+Based on the data, the primary skills appear to be related to integration platforms, middleware, and API management. The dominant technology is likely Boomi/Dell Boomi Integration platform.
+
+## QUERY GENERATION STRATEGY
+Create diverse, high-quality search queries optimized for the **JobSpy library**. 
+
+**JOBSPY COMPATIBILITY REQUIREMENTS:**
+- **search_term**: ONLY keywords, job titles, skills. NO location.
+- **location**: Separate parameter. Use format "City, Country" or just "Country" or "Remote"
+- **job_type**: Must be one of: "fulltime", "parttime", "contract", "internship" (lowercase)
+- **platforms**: Array of valid platform names (lowercase, underscores)
+- **results_wanted**: Number between 5-50 per query
+- **is_remote**: Can be used for remote filtering (boolean)
+
+**Query Types to Generate:**
+
+1. **Primary Skill + Title Queries** (40%):
+   - **MUST include the primary skill** (e.g., "Boomi", "Dell Boomi", "Integration Platform")
+   - Combine with job title or seniority
+   - Example: "Senior Boomi Developer", "Dell Boomi Integration Engineer", "Boomi Architect"
+
+2. **Skill-Focused Queries** (30%):
+   - Combine 2-3 complementary skills from the skills array
+   - **At least 50% must include the primary skill**
+   - Add experience level keywords
+   - Example: "Boomi Kafka API Management", "Dell Boomi Salesforce integration"
+
+3. **Technology Stack Queries** (20%):
+   - Group related technologies from projects and experience
+   - Focus on integration technologies
+   - Example: "Middleware Developer Groovy Java", "Integration Engineer XML JSON EDIFACT"
+
+4. **Title-Based Queries** (10%):
+   - Use actual job titles from worked_job_titles
+   - Add seniority level based on experience_years
+   - Example: "Senior System Engineer", "Integration Specialist"
+
+**Query Construction Rules:**
+
+**Location Handling:**
+{%- if preferred_location %}
+- Primary location: "{{ preferred_location }}"
+- Create 60% of queries for this location
+- Create 30% for other major cities in {{ country }}
+- Create 10% for "Remote"
+{%- else %}
+- Since no specific location provided, use "Anywhere in {{ country }}"
+- Diversify across: major cities in {{ country }}, "Remote", and broad country searches
+- For India: Bangalore, Hyderabad, Pune, Mumbai, Delhi NCR, Chennai
+{%- endif %}
+
+**Job Type:**
+- Use "{{ job_type }}" for all queries unless specified otherwise
+- Valid values: "fulltime", "parttime", "contract", "internship"
+
+**Platform Selection (JobSpy Compatible):**
+{%- if country.lower() in ['india', 'indian'] %}
+- Primary platforms: ["naukri", "linkedin", "indeed"]
+- For remote roles, add: ["zip_recruiter", "google"]
+- Platform format: lowercase with underscores (e.g., "zip_recruiter" not "ZipRecruiter")
+{%- else %}
+- Primary platforms: ["linkedin", "indeed", "glassdoor"]
+- Add: ["zip_recruiter", "google"]
+{%- endif %}
+
+**Experience Level Keywords:**
+{%- if experience >= 7 %}
+- Seniority terms: "Senior", "Lead", "Principal", "Staff", "Architect"
+{%- elif experience >= 4 %}
+- Seniority terms: "Senior", "Experienced", "Mid-level"
+{%- elif experience >= 2 %}
+- Seniority terms: "Mid-level", "Associate", "Experienced"
+{%- else %}
+- Seniority terms: "Junior", "Associate", "Entry-level"
+{%- endif %}
+
+**Results Per Query:**
+- High-specificity queries (primary skill + title): 15-20 results
+- Medium-specificity (skill combinations): 10-15 results
+- Broad queries (technology stacks): 5-10 results
+
+## OUTPUT FORMAT
+Return a valid JSON array ONLY. No markdown code blocks (```), no explanations, no extra text before or after.
+
+**Schema (JobSpy Compatible):**
+[
+  {
+    "search_term": "string - keywords/titles/skills ONLY (NO location)",
+    "location": "string - 'City, Country' OR 'Remote' OR 'Country'",
+    "job_type": "string - 'fulltime'|'parttime'|'contract'|'internship'",
+    "platforms": ["lowercase", "platform", "names"],
+    "results_wanted": integer (5-50),
+    "is_remote": boolean (optional, for remote filtering)
+  }
+]
+
+**Valid JobSpy Platform Names:**
+- "linkedin" - LinkedIn (global)
+- "indeed" - Indeed (use country_indeed parameter if needed)
+- "naukri" - Naukri (India)
+- "glassdoor" - Glassdoor (various countries)
+- "zip_recruiter" - ZipRecruiter (US/Canada)
+- "google" - Google Jobs (global)
+
+**Example Output (Based on Boomi Integration Profile):**
+[
+  {
+    "search_term": "Senior Boomi Integration Developer",
+    "location": "Bangalore, India",
+    "job_type": "fulltime",
+    "platforms": ["naukri", "linkedin", "indeed"],
+    "results_wanted": 20
+  },
+  {
+    "search_term": "Dell Boomi Architect",
+    "location": "Hyderabad, India",
+    "job_type": "fulltime",
+    "platforms": ["linkedin", "naukri"],
+    "results_wanted": 15
+  },
+  {
+    "search_term": "Boomi Kafka API Management experienced",
+    "location": "Pune, India",
+    "job_type": "fulltime",
+    "platforms": ["indeed", "naukri"],
+    "results_wanted": 12
+  },
+  {
+    "search_term": "Integration Engineer Boomi Salesforce",
+    "location": "Remote",
+    "job_type": "fulltime",
+    "platforms": ["linkedin", "zip_recruiter", "google"],
+    "results_wanted": 18,
+    "is_remote": true
+  },
+  {
+    "search_term": "Middleware Developer Groovy Java",
+    "location": "Mumbai, India",
+    "job_type": "fulltime",
+    "platforms": ["naukri", "indeed"],
+    "results_wanted": 10
+  }
+]
+
+**CRITICAL REQUIREMENTS:**
+1. **PRIMARY SKILL INCLUSION**: At least 50% of queries MUST include the identified primary skill in the search_term
+2. **NO LOCATION IN SEARCH_TERM**: Location goes ONLY in the "location" field
+3. **PURE JSON**: Return ONLY the JSON array, no markdown, no text
+4. **JOBSPY FORMAT**: Use exact platform names and parameter formats as shown

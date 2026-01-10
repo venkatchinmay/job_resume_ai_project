@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Matcher - Find Your Perfect Job</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Hero Section -->
+        <header class="hero">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="gradient-text">AI-Powered</span> Job Matcher
+                </h1>
+                <p class="hero-subtitle">Upload your resume and discover personalized job matches ranked by AI</p>
+            </div>
+        </header>
+
+        <!-- Input Form Section -->
+        <section id="upload-section" class="section">
+            <div class="card upload-card">
+                <form id="upload-form" enctype="multipart/form-data">
+                    <!-- File Upload -->
+                    <div class="form-group">
+                        <label class="form-label">Resume (PDF)</label>
+                        <div class="file-upload-wrapper">
+                            <div id="drop-zone" class="drop-zone">
+                                <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="drop-zone-text">Drag & drop your resume here</p>
+                                <p class="drop-zone-subtext">or click to browse</p>
+                                <input type="file" id="resume-input" name="resume" accept=".pdf" hidden>
+                            </div>
+                            <div id="file-info" class="file-info hidden">
+                                <span id="file-name"></span>
+                                <button type="button" id="remove-file" class="btn-remove">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Location Dropdown -->
+                    <div class="form-group">
+                        <label for="location" class="form-label">Preferred Location</label>
+                        <select id="location" name="location" class="form-select">
+                            <option value="Hyderabad">Hyderabad</option>
+                            <option value="Bangalore">Bangalore</option>
+                            <option value="Mumbai">Mumbai</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Pune">Pune</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Kolkata">Kolkata</option>
+                            <option value="Ahmedabad">Ahmedabad</option>
+                            <option value="Gurgaon">Gurgaon</option>
+                            <option value="Noida">Noida</option>
+                            <option value="Chandigarh">Chandigarh</option>
+                            <option value="Jaipur">Jaipur</option>
+                            <option value="Kochi">Kochi</option>
+                            <option value="Indore">Indore</option>
+                            <option value="Coimbatore">Coimbatore</option>
+                        </select>
+                    </div>
+
+                    <!-- Platform Selection Dropdown -->
+                    <div class="form-group">
+                        <label for="platform" class="form-label">AI Platform</label>
+                        <select id="platform" name="platform" class="form-select">
+                            <option value="groq" selected>Groq (Cloud - Fast)</option>
+                            <option value="openrouter">OpenRouter (Cloud - Free)</option>
+                            <option value="transformers">Transformers (Local Model)</option>
+                        </select>
+                        <!-- Warning message for Transformers -->
+                        <div id="transformer-warning" class="warning-message hidden">
+                            ⚠️ <strong>Note:</strong> Selecting Transformers will download the Qwen model (~3GB).
+                            Ensure you have sufficient disk space and a stable internet connection.
+                        </div>
+                    </div>
+
+                    <!-- Advanced Settings (Collapsible) -->
+                    <div class="form-group">
+                        <button type="button" id="toggle-advanced" class="btn-link">
+                            ⚙️ Advanced Settings
+                            <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor">
+                                <polyline points="6 9 12 15 18 9" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                        <div id="advanced-settings" class="advanced-settings hidden">
+                            <div class="settings-grid">
+                                <div class="form-group">
+                                    <label for="max_queries" class="form-label">Max Search Queries</label>
+                                    <input type="number" id="max_queries" name="max_queries" value="10" min="5" max="20"
+                                        class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <label for="hours_old" class="form-label">Job Age (hours)</label>
+                                    <input type="number" id="hours_old" name="hours_old" value="168" min="24" max="720"
+                                        class="form-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-btn" class="btn-primary" disabled>
+                        <span class="btn-text">🚀 Find My Perfect Jobs</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Progress Section -->
+        <section id="progress-section" class="section hidden">
+            <div class="card progress-card">
+                <h2 class="section-title">Processing Your Resume...</h2>
+                <div class="progress-steps">
+                    <div class="progress-step" data-step="resume_analysis">
+                        <div class="step-icon">1</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Resume Analysis</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                    <div class="progress-step" data-step="enrichment">
+                        <div class="step-icon">2</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Data Enrichment</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                    <div class="progress-step" data-step="queries">
+                        <div class="step-icon">3</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Search Queries</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                    <div class="progress-step" data-step="job_search">
+                        <div class="step-icon">4</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Job Portal Search</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                    <div class="progress-step" data-step="remote_search">
+                        <div class="step-icon">5</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Remote Jobs</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                    <div class="progress-step" data-step="ranking">
+                        <div class="step-icon">6</div>
+                        <div class="step-content">
+                            <h3 class="step-title">Ranking & Scoring</h3>
+                            <p class="step-message">Waiting...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="overall-progress">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <p id="progress-text" class="progress-text">0%</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="section hidden">
+            <div class="card results-card">
+                <div class="results-header">
+                    <h2 class="section-title">🏆 Your Top Job Matches</h2>
+                    <p id="results-count" class="results-count"></p>
+                </div>
+                <div class="table-wrapper">
+                    <table id="results-table" class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Overall Score</th>
+                                <th>Skills</th>
+                                <th>Location</th>
+                                <th>Job URL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+
+</html>

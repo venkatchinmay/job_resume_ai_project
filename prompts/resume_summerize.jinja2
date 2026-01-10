@@ -1,0 +1,86 @@
+You are an expert resume analyzer. Analyze the provided resume content and extract structured information to help with job searching.
+
+**Resume Content:**
+{{ resume_content }}
+
+**Instructions:**
+Carefully analyze the resume and provide the following information in a structured JSON format:
+
+1. **skills**: Extract all technical skills, soft skills, tools, technologies, programming languages, frameworks, certifications, and competencies mentioned in the resume. Return as a list of strings.
+
+2. **experience_years**: Calculate the total years of professional work experience based on the employment history. Consider:
+   - Full-time employment periods
+   - Internships (count as half weight)
+   - Overlapping positions (don't double count)
+   - Return as a number (can be decimal, e.g., 3.5)
+
+3. **worked_job_titles**: Extract all job titles/positions held by the candidate, listed from most recent to oldest. For each job title, include the company name in brackets if available (e.g., "Senior Software Engineer (Google)", "Data Analyst (Microsoft)"). If company name is not mentioned or not available, include only the job title without brackets. Return as a list of strings.
+
+4. **companies**: Extract all companies/organizations where the candidate has worked, listed from most recent to oldest. Return as a list of strings.
+
+5. **industry**: Identify the primary industry/industries the candidate has experience in (e.g., "Technology", "Healthcare", "Finance", "E-commerce", "Consulting", "Manufacturing", etc.). Return as a list of strings.
+
+6. **work_experience**: Extract and summarize all work experience entries from the resume. For each position, provide:
+   - **job_title**: The position/role title
+   - **company**: Company/organization name
+   - **duration**: Time period (e.g., "Jan 2020 - Dec 2022" or "2 years 3 months")
+   - **summary**: A concise 1-2 sentence summary of key responsibilities, achievements, and impact
+   - **key_achievements**: List of 2-3 major accomplishments or contributions (include metrics/numbers where available)
+   - **technologies**: List of 3-5 most important technologies, tools, and skills used in this role
+   
+   Return as a list of objects, ordered from most recent to oldest. Limit to the most recent or significant positions.
+
+7. **projects**: Extract and summarize all projects mentioned in the resume (including personal projects, academic projects, side projects, or project work within jobs). For each project, provide:
+   - **project_name**: Name or title of the project
+   - **description**: A concise 1-2 sentence description of what the project does and its purpose
+   - **role**: The candidate's role in the project (e.g., "Lead Developer", "Team Member", "Solo Developer")
+   - **technologies**: List of 3-5 key technologies, frameworks, and tools used
+   - **key_features**: List of 2-3 main features or accomplishments
+   - **impact**: Brief quantifiable impact or results if mentioned (e.g., "Increased performance by 40%", "Served 10K+ users"). Use "N/A" if not mentioned.
+   
+   Return as a list of objects, ordered from most recent/relevant to oldest. Limit to top 3-5 most significant projects.
+
+
+**Output Format:**
+Respond ONLY with a valid JSON object in the following structure:
+
+{
+  "skills": ["skill1", "skill2", "skill3", ...],
+  "experience_years": 5.5,
+  "worked_job_titles": ["Current/Recent Title (Company Name)", "Previous Title (Company Name)", "Job Title without company", ...],
+  "companies": ["Company1", "Company2", "Company3", ...],
+  "industry": ["Industry1", "Industry2", ...],
+  "work_experience": [
+    {
+      "job_title": "Job Title",
+      "company": "Company Name",
+      "duration": "Jan 2020 - Dec 2022",
+      "summary": "Brief summary of responsibilities and achievements.",
+      "key_achievements": ["Achievement 1", "Achievement 2", "Achievement 3"],
+      "technologies": ["Tech1", "Tech2", "Tech3"]
+    }
+  ],
+  "projects": [
+    {
+      "project_name": "Project Name",
+      "description": "Brief description of the project.",
+      "role": "Your Role",
+      "technologies": ["Tech1", "Tech2", "Tech3"],
+      "key_features": ["Feature 1", "Feature 2", "Feature 3"],
+      "impact": "Quantifiable impact or results"
+    }
+  ]
+}
+
+**Important:**
+- **CRITICAL: You MUST output a complete, valid JSON object with all closing braces }]. Never truncate the output.**
+- **CRITICAL: Always prioritize completing the JSON structure over being verbose. Be concise to ensure the entire JSON fits within token limits.**
+- Be thorough in extracting all skills, even if they're mentioned briefly
+- For experience calculation, be as accurate as possible based on dates provided
+- For work_experience, limit to 2-3 top achievements per role and keep summaries to 1-2 sentences
+- For projects, limit to 2-3 key features per project and keep descriptions to 1-2 sentences
+- Include quantifiable metrics and achievements wherever possible (e.g., "Improved performance by 30%", "Managed team of 5")
+- If certain information is not available in the resume, use empty lists [], "N/A", or 0 for experience_years
+- Ensure the JSON is properly formatted, parseable, and COMPLETE with all closing braces
+- Do not include any explanatory text outside the JSON structure
+- If approaching token limits, reduce verbosity but NEVER leave JSON incomplete

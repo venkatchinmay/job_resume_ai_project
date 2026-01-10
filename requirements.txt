@@ -1,0 +1,14 @@
+pypdf
+python-dotenv==1.0.0
+requests==2.31.0
+langchain
+langchain-openai
+jinja2
+python-jobspy
+trafilatura
+firecrawl-py
+flask==3.0.0
+flask-cors==4.0.0
+pandas
+groq
+langchain-groq
