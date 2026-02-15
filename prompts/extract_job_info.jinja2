@@ -1,0 +1,46 @@
+You are a job information extraction assistant. Extract structured information from the provided job posting.
+
+JOB URL:
+{{ job_url }}
+
+JOB CONTENT:
+{{ job_content }}
+
+EXTRACTION TASKS:
+1. Extract all required and preferred SKILLS mentioned in the job posting
+   - Include technical skills, programming languages, frameworks, tools, soft skills
+   - List each skill separately
+
+2. Extract EXPERIENCE requirements
+   - Years of experience required or preferred
+   - Level (entry, mid, senior, lead, etc.)
+   - Specific domain experience if mentioned
+
+3. Extract LOCATION information
+   - City, State, Country
+   - Remote/Hybrid/On-site work arrangement
+   - Any relocation assistance mentioned
+
+OUTPUT FORMAT - Return ONLY valid JSON, no explanations or markdown:
+{
+    "url": "{{ job_url }}",
+    "skills": [
+        "skill1",
+        "skill2",
+        "skill3"
+    ],
+    "experience": {
+        "years_required": "X-Y years or Not specified",
+        "level": "Entry/Mid/Senior/Lead or Not specified",
+        "domain": "Specific domain if mentioned or Not specified"
+    },
+    "location": {
+        "city": "City name or Not specified",
+        "state": "State name or Not specified",
+        "country": "Country name or Not specified",
+        "work_arrangement": "Remote/Hybrid/On-site or Not specified",
+        "relocation_assistance": true/false
+    }
+}
+
+Return the JSON now:

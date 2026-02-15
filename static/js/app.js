@@ -1,6 +1,7 @@
 // State management
 let currentJobId = null;
 let eventSource = null;
+let currentResults = null; // Store results for download
 
 // DOM Elements
 const uploadForm = document.getElementById('upload-form');
@@ -21,6 +22,10 @@ const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
 const resultsBody = document.getElementById('results-body');
 const resultsCount = document.getElementById('results-count');
+
+// Download elements
+const downloadBtn = document.getElementById('download-btn');
+const formatDropdown = document.getElementById('format-dropdown');
 
 // Platform selector elements
 const platformSelect = document.getElementById('platform');
@@ -248,6 +253,9 @@ function displayResults(results) {
     // Filter out jobs with 0 scores
     const validResults = results.filter(job => job.score > 0);
 
+    // Store results globally for download
+    currentResults = validResults;
+
     resultsCount.textContent = `Found ${validResults.length} matching jobs`;
 
     validResults.forEach((job, index) => {
@@ -298,6 +306,122 @@ function displayResults(results) {
         resultsBody.appendChild(row);
     });
 }
+
+// Download functionality
+function downloadAsCSV() {
+    if (!currentResults || currentResults.length === 0) return;
+
+    // Create CSV header
+    let csv = 'Rank,Overall Score,Skills Score,Location Score,Job URL\n';
+
+    // Add data rows
+    currentResults.forEach((job, index) => {
+        const rank = index + 1;
+        const row = [
+            rank,
+            job.score,
+            job.skills_score || 0,
+            job.location_score || 0,
+            `"${job.url}"` // Quote URL to handle commas
+        ].join(',');
+        csv += row + '\n';
+    });
+
+    downloadFile(csv, 'job-matches.csv', 'text/csv');
+}
+
+function downloadAsTXT() {
+    if (!currentResults || currentResults.length === 0) return;
+
+    const timestamp = new Date().toLocaleString();
+    let txt = '═══════════════════════════════════════════════════════\n';
+    txt += '           AI JOB MATCHER - RESULTS REPORT\n';
+    txt += '═══════════════════════════════════════════════════════\n';
+    txt += `Generated: ${timestamp}\n`;
+    txt += `Total Matches: ${currentResults.length}\n`;
+    txt += '═══════════════════════════════════════════════════════\n\n';
+
+    currentResults.forEach((job, index) => {
+        const rank = index + 1;
+        txt += `─────────────────────────────────────────────────────\n`;
+        txt += `RANK #${rank}\n`;
+        txt += `─────────────────────────────────────────────────────\n`;
+        txt += `Overall Score:    ${job.score}/100\n`;
+        txt += `Skills Match:     ${job.skills_score || 0}/10\n`;
+        txt += `Location Match:   ${job.location_score || 0}/10\n`;
+        txt += `Job URL:          ${job.url}\n\n`;
+    });
+
+    txt += '═══════════════════════════════════════════════════════\n';
+    txt += '              END OF REPORT\n';
+    txt += '═══════════════════════════════════════════════════════\n';
+
+    downloadFile(txt, 'job-matches.txt', 'text/plain');
+}
+
+function downloadAsJSON() {
+    if (!currentResults || currentResults.length === 0) return;
+
+    const data = {
+        generated_at: new Date().toISOString(),
+        total_results: currentResults.length,
+        jobs: currentResults.map((job, index) => ({
+            rank: index + 1,
+            overall_score: job.score,
+            skills_score: job.skills_score || 0,
+            location_score: job.location_score || 0,
+            url: job.url
+        }))
+    };
+
+    const json = JSON.stringify(data, null, 2);
+    downloadFile(json, 'job-matches.json', 'application/json');
+}
+
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// Download button event listeners
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        formatDropdown.classList.toggle('hidden');
+    });
+}
+
+// Format selection event listeners
+if (formatDropdown) {
+    formatDropdown.querySelectorAll('.format-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const format = btn.getAttribute('data-format');
+
+            if (format === 'csv') downloadAsCSV();
+            else if (format === 'txt') downloadAsTXT();
+            else if (format === 'json') downloadAsJSON();
+
+            formatDropdown.classList.add('hidden');
+        });
+    });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    if (formatDropdown && !formatDropdown.classList.contains('hidden')) {
+        if (!e.target.closest('.download-container')) {
+            formatDropdown.classList.add('hidden');
+        }
+    }
+});
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {

@@ -141,6 +141,7 @@ def detecting_search_queries(platform,data,max_search_queries=10):
     try:
         queries = json.loads(content)
         if queries:
+            print(f"✅ Queries : {queries}")
             return queries
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -217,7 +218,69 @@ def _get_model(platform):
     elif platform == "groq":
         return "llama-3.3-70b-versatile"
     else:
-        return "transformers"
+        return "Qwen/Qwen2.5-1.5B-Instruct"
+
+def _get_models(platform):
+    if platform == "groq":
+        return [
+            "llama-3.3-70b-versatile",
+            "groq/compound",
+            "qwen/qwen3-32b",
+            "meta-llama/llama-4-maverick-17b-128e-instruct",
+            "meta-llama/llama-4-scout-17b-16e-instruct",
+            "openai/gpt-oss-120b",
+            "moonshotai/kimi-k2-instruct",
+            "openai/gpt-oss-20b",
+            "llama-3.1-8b-instant",
+            "groq/compound-mini",
+            "moonshotai/kimi-k2-instruct-0905",
+            "allam-2-7b",
+            "canopylabs/orpheus-v1-english",
+            "openai/gpt-oss-safeguard-20b",
+            "canopylabs/orpheus-arabic-saudi",
+            "meta-llama/llama-guard-4-12b",
+            "whisper-large-v3-turbo",
+            "whisper-large-v3",
+            "meta-llama/llama-prompt-guard-2-86m",
+            "meta-llama/llama-prompt-guard-2-22m"
+        ]
+    elif platform == "openrouter":
+        return [
+            "nousresearch/hermes-3-llama-3.1-405b:free",
+            "meta-llama/llama-3.1-405b-instruct:free",
+            "google/gemini-2.0-flash-exp:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "deepseek/deepseek-r1-0528:free",
+            "tngtech/deepseek-r1t2-chimera:free",
+            "tngtech/deepseek-r1t-chimera:free",
+            "google/gemma-3-27b-it:free",
+            "nvidia/nemotron-3-nano-30b-a3b:free",
+            "mistralai/mistral-small-3.1-24b-instruct:free",
+            "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+            "openai/gpt-oss-120b:free",
+            "google/gemma-3-12b-it:free",
+            "tngtech/tng-r1t-chimera:free",
+            "moonshotai/kimi-k2:free",
+            "nvidia/nemotron-nano-9b-v2:free",
+            "z-ai/glm-4.5-air:free",
+            "mistralai/devstral-2512:free",
+            "arcee-ai/trinity-mini:free",
+            "mistralai/mistral-7b-instruct:free",
+            "qwen/qwen3-coder:free",
+            "kwaipilot/kat-coder-pro:free",
+            "google/gemma-3n-e4b-it:free",
+            "google/gemma-3-4b-it:free",
+            "qwen/qwen3-4b:free",
+            "meta-llama/llama-3.2-3b-instruct:free",
+            "google/gemma-3n-e2b-it:free",
+            "openai/gpt-oss-20b:free",
+            "nvidia/nemotron-nano-12b-v2-vl:free",
+            "qwen/qwen-2.5-vl-7b-instruct:free",
+            "allenai/molmo-2-8b:free",
+            "xiaomi/mimo-v2-flash:free"
+        ]
+    else:
+        raise ValueError("Invalid platform")    
 
 def _process_job_matching_open_router(platform,resume_data, urls, progress_callback=None):
     # 1. Parallel Scraping
@@ -267,7 +330,7 @@ def _process_job_matching_open_router(platform,resume_data, urls, progress_callb
         
         print(f"\n--- Processing Batch {i}/{len(chunks)} ({len(batch)} jobs) ---")
         
-        batch_scores = _process_batch_suitability(platform,resume_data, batch)
+        batch_scores = _process_models_batch_suitability(platform,resume_data, batch)
         
         
         # Print URL and Score for the user (and map score back to proper list)
@@ -328,12 +391,12 @@ def _process_groq_job_matching(platform,resume_data, urls, progress_callback=Non
         return pd.DataFrame()
     
     # 2. Split into chunks of 5 jobs each
-    chunk_size = 5
+    chunk_size = 3
     chunks = []
     for i in range(0, total_jobs, chunk_size):
         chunks.append(valid_jobs[i:i + chunk_size])
         
-    print(f"Split jobs into {len(chunks)} batches for LLM processing (5 jobs per batch).")
+    print(f"Split jobs into {len(chunks)} batches for LLM processing (3 jobs per batch).")
     
     all_results = []
     
@@ -348,7 +411,7 @@ def _process_groq_job_matching(platform,resume_data, urls, progress_callback=Non
         
         print(f"\n--- Processing Batch {i}/{len(chunks)} ({len(batch)} jobs) ---")
         
-        batch_scores = _process_batch_suitability(platform,resume_data, batch)
+        batch_scores = _process_models_batch_suitability(platform,resume_data, batch)
         
         # Print URL and Score for the user (and map score back to proper list)
         for job_item in batch:
@@ -521,7 +584,58 @@ def _process_transformer_batch_suitability(resume, job_chunk):
         print(f"❌ Error processing transformer batch: {e}")
         import traceback
         traceback.print_exc()
-        return []           
+        return [] 
+
+def _process_models_batch_suitability(platform,resume, job_chunk):
+    """
+    Sends a batch of jobs to the LLM and returns a list of {url, score, skills_score, location_score}.
+    """
+    # Convert job chunk to JSON string for the prompt
+    jobs_json = json.dumps(job_chunk, indent=2)
+    
+    prompt_file_name = "ranking_urls.jinja2"
+    arguments = {
+        "resume": resume,
+        "jobs_json": jobs_json
+    }
+    models = _get_models(platform)
+
+    try:
+        for model in models:
+            # Initialize LLM
+            # Using temperature 0.1 for more consistent, deterministic JSON output
+            print(f"Processing batch with model {model}")
+            try:
+                chat_model, prompt_content = LLM.get_llm_model_without_tools(
+                    platform, 
+                    model, 
+                    0.1,  
+                    prompt_file_name, 
+                    arguments
+                )
+        
+                messages = [
+                    SystemMessage(content=prompt_content),
+                ]
+        
+                # LLM Call (1 call per batch)
+                response = chat_model.invoke(messages)
+                content = response.content.strip()
+            
+                # Clean potential markdown formatting
+                if content.startswith("```"):
+                    content = content.replace("```json", "").replace("```", "")
+            
+                results = json.loads(content.strip())
+                return results
+            except Exception as e:
+                print(f"Error processing batch with model {model} : {e}")
+                continue
+        print(f"Error processing batch with all models")
+        return []                   
+    except Exception as e:
+      print(f"Error processing batch: {e}")
+      return []                  
 
 def _scrape_url_linkedin(url):
     app = FirecrawlApp(api_url='http://localhost:3002', api_key='test-key')
